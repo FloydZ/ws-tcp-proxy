@@ -5,12 +5,14 @@ This is a simple Websocket to TCP proxy, built on libuv.
 
 Building
 -----
-
-    git clone git@github.com:edwardchoh/ws-tcp-proxy.git
+```
+ 	git clone git@github.com:FloydZ/ws-tcp-proxy
     cd ws-tcp-proxy
-    make -j 4
-
-    On Mac, use MacOSX/ws-tcp-proxy.xcodeproj
+    mkdir build
+	cd build
+	cmake ..
+	make -j1
+```
 
 Running
 -----
@@ -19,12 +21,6 @@ The server accepts the following arguments:
 ```
     ./ws-tcp-proxy --local 0.0.0.0:8080 --remote 127.0.0.1:5000
 ```
-
-TODO
-----
-- Readme überarbeiteb
-- Wall flags compiler check
-- Remove makefile
 
 Features
 -----
