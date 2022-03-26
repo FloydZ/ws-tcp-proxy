@@ -111,7 +111,7 @@ void ws_write(_context *ctx, char *buf, size_t len, unsigned int opcode) {
         wr = malloc(sizeof(write_req_t));
         wr->buf = uv_buf_init(header, hdr_len);
         if (use_tls){
-            DEBUG_PRINT("ws_write tls\n");
+            printf("ws_write tls\n");
             uv_tls_write((uv_tls_t*)(ctx->local), &wr->buf, TLS_after_local_write);
         }else{
             //printf("SEND BYTES: %s\n", (char *)&wr->buf);
@@ -121,7 +121,7 @@ void ws_write(_context *ctx, char *buf, size_t len, unsigned int opcode) {
         wr = malloc(sizeof(write_req_t));
         wr->buf = uv_buf_init(buf, (unsigned int)len);
         if (use_tls){
-            DEBUG_PRINT("ws_write tls2\n");
+            printf("ws_write tls2\n");
             uv_tls_write((uv_tls_t*)(ctx->local), &wr->buf, TLS_after_local_write);
         }else{
             uv_write(&wr->req, ctx->local, &wr->buf, 1, after_local_write);
@@ -143,7 +143,7 @@ void context_init (uv_stream_t* handle) {
     context->request->id = 0;
     context->request->handshake = 0;
     context->local = handle;
-    handle->data2 = context;
+    handle->data = context; // data2
 #ifdef NORMALHTTP
     context->parser = malloc(sizeof(http_parser));
     http_parser_init(context->parser, HTTP_REQUEST);
@@ -154,7 +154,7 @@ void context_init (uv_stream_t* handle) {
 }
 
 void context_free (uv_handle_t* handle) {
-    _context* context = handle->data2;
+    _context* context = handle->data; // data2
     if(context) {
         free(context->request);
 #ifdef NORMALHTTP
@@ -182,7 +182,7 @@ void ws_handshake_complete_cb(_context *ctx, char *buf, int len) {
         fprintf(stderr, "Socket creation error: %s", uv_strerror(e));
         return;
     }
-    ctx->remote->data2 = ctx;
+    ctx->remote->data = ctx; // data2
 
     uv_connect_t *cr = malloc(sizeof(uv_connect_t));
     e = uv_tcp_connect(cr, (uv_tcp_t*)ctx->remote, (const struct sockaddr*) &remote_addr, on_remote_connection);
@@ -197,7 +197,7 @@ void ws_handshake_complete_cb(_context *ctx, char *buf, int len) {
 
 #ifdef NORMALHTTP
     if(!http_should_keep_alive(ctx->parser)) {
-        DEBUG_PRINT("http_should_keep_alive \n");
+        printf("http_should_keep_alive \n");
         uv_close((uv_handle_t*)ctx->local, on_local_close);
     }
 #endif
@@ -209,13 +209,14 @@ static void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* b
   buf->len = suggested_size;
 }
 
-/*void uv_rd_cb( uv_stream_t *strm, ssize_t nrd, const uv_buf_t *bfr) {
+//TODO after_local_read muss das machen
+void uv_rd_cb( uv_stream_t *strm, ssize_t nrd, const uv_buf_t *bfr) {
     printf("TLS write: %s\n", bfr->base);
 
     if ( nrd <= 0 ) return;
     printf("TLS write: len >0\n");
     uv_tls_write((uv_tls_t*)strm, (uv_buf_t*)bfr, TLS_after_local_write);
-}*/
+}
 
 
 void on_local_close(uv_handle_t* peer) {
@@ -235,7 +236,7 @@ void after_shutdown(uv_shutdown_t* req, int status) {
 }
 
 void after_remote_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t *buf) {
-    _context *ctx = handle->data2;
+    _context *ctx = handle->data; // data2
     if (nread < 0) {
         DEBUG_PRINT("after_remote_read: <0\n");
         /* disassociate remote connection from context */
@@ -267,7 +268,7 @@ void after_remote_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t *buf) 
 }
 
 void on_remote_connection(uv_connect_t *req, int status) {
-    _context *ctx = req->handle->data2;
+    _context *ctx = req->handle->data; // data2
     if (status == -1) {
         // error connecting to remote, disconnect local */
         fprintf(stderr, "Remote connect error:\n");
@@ -283,7 +284,7 @@ void on_remote_connection(uv_connect_t *req, int status) {
         wr = malloc(sizeof(write_req_t));
         wr->buf = ctx->pending_response;
         if (use_tls){
-            DEBUG_PRINT("on_remote_connection tls \n");
+            printf("on_remote_connection tls \n");
             uv_tls_write((uv_tls_t*)(ctx->local), &wr->buf, TLS_after_local_write);
         }else{
             uv_write(&wr->req, ctx->local, &wr->buf, 1, after_local_write);
@@ -307,16 +308,16 @@ void after_local_write(uv_write_t* req, int status) {
 }
 
 #ifndef NORMALHTTP
-void parse_headers(request* req,  struct phr_header *headers, int nHeader)
-{
+void parse_headers(request* req,  struct phr_header *headers, int nHeader) {
     for (int i = 0; i != nHeader; ++i) {
         printf("%.*s: %.*s\n", (int)headers[i].name_len, headers[i].name,
                (int)headers[i].value_len, headers[i].value);
     }
 }
 #endif
+
 void after_local_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t *buf) {
-   #ifndef NORMALHTTP
+#ifndef NORMALHTTP
     const char *msg;
     int pret, minor_version, status;
     struct phr_header headers[100];
@@ -331,14 +332,13 @@ void after_local_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t *buf) {
         printf("Read 0\n");
         uv_close((uv_handle_t*)handle, on_local_close);
     } else {
-        _context *ctx = handle->data2;
+        _context *ctx = handle->data; // data2
         if ( ctx == NULL ) {
            printf("Context not vaild\n");
            return;
         }
         if (ctx->request->handshake == 0) {
 #ifdef NORMALHTTP
-
             size_t np = http_parser_execute(ctx->parser, &settings, buf->base, nread);
             if(np != nread) {
                 DEBUG_PRINT("http parser ERROR\n");
@@ -396,11 +396,11 @@ void after_local_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t *buf) {
 
 void on_uv_handshake(uv_tls_t *ut, int status) {
     if ( 0 == status ){
-        DEBUG_PRINT("Recv valid tls handshake\n");
+        printf("Recv valid tls handshake\n");
         //OLD uv_tls_read((uv_stream_t*)ut, NULL, uv_rd_cb);
         uv_tls_read((uv_stream_t*)ut, alloc_buffer, after_local_read);
     }else{
-        DEBUG_PRINT("Recv invalid tls handshake\n");
+        printf("Recv invalid tls handshake\n");
         uv_tls_close((uv_handle_t*)ut, (uv_close_cb)free);
     }
 }
@@ -412,7 +412,7 @@ void on_local_connection(uv_stream_t *handle, int status) {
     }
 
     if (use_tls == true){
-        DEBUG_PRINT("on_local_connection tls\n");
+        printf("on_local_connection tls\n");
 
         //uv_stream_t *stream = malloc(sizeof(uv_tcp_t));
 
@@ -457,7 +457,7 @@ int server_start(uv_tcp_t *server) {
     int e = 0;
     e = uv_tcp_init_ex(loop, server, AF_INET);
     if (e < 0) {
-        DEBUG_PRINT("Socket creation error: %s\n",  uv_strerror(e));
+        printf("Socket creation error: %s\n",  uv_strerror(e));
         return 1;
     }
 
@@ -468,7 +468,7 @@ int server_start(uv_tcp_t *server) {
     e = setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char*)&on, sizeof(on));
     if (e != 0)
     {
-        DEBUG_PRINT("setsockopt error: %d\n", errno);
+        printf("setsockopt: %d\n", errno);
     }
 
     server->data = &ctx;
@@ -476,13 +476,13 @@ int server_start(uv_tcp_t *server) {
 
     e = uv_tcp_bind(server, (const struct sockaddr*)&local_addr, 0);
     if (e < 0) {
-        DEBUG_PRINT("Socket bind error: %s\n", uv_strerror(e));
+        printf("Socket bind error: %s\n", uv_strerror(e));
         return 1;
     }
 
     e = uv_listen((uv_stream_t*)server, BACKLOG, on_local_connection);
     if (e < 0) {
-        DEBUG_PRINT("Socket listen error: %s\n", uv_strerror(e));
+        printf("Socket listen error: %s\n", uv_strerror(e));
         return 1;
     }
 
@@ -522,7 +522,7 @@ int parse_args(int argc, char **argv) {
 
         switch(c) {
             case 's':
-                DEBUG_PRINT("%s\n", "User SSL");
+                printf("%s\n", "User SSL");
                 use_tls = true;
                 break;
             case 'r':
@@ -573,7 +573,7 @@ int main(int argc, char **argv) {
 
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-    int num_threads = 2;
+    int num_threads = 1;
     uv_tcp_t server[num_threads];
     uv_thread_t threads[num_threads];
     uv_loop_t *uv_loop;

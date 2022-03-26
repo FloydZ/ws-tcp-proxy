@@ -5,14 +5,13 @@
 // Distributed under the MIT License (See accompanying file LICENSE)
 //
 //////////////////////////////////////////////////////////////////////////
-//
-//%///////////////////////////////////////////////////////////////////////////
+
 #include <string.h>
 #include <assert.h>
+
 #include "evt_tls.h"
 
-evt_endpt_t evt_tls_get_role(const evt_tls_t *t)
-{
+evt_endpt_t evt_tls_get_role(const evt_tls_t *t) {
     assert(t != NULL);
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
     return t->ssl->server ? ENDPT_IS_SERVER : ENDPT_IS_CLIENT;
@@ -21,8 +20,7 @@ evt_endpt_t evt_tls_get_role(const evt_tls_t *t)
 #endif
 }
 
-void evt_tls_set_role(evt_tls_t *t, evt_endpt_t role)
-{
+void evt_tls_set_role(evt_tls_t *t, evt_endpt_t role) {
     assert(t != NULL && (role  == ENDPT_IS_CLIENT || role == ENDPT_IS_SERVER));
     if ( ENDPT_IS_SERVER == role ) {
         SSL_set_accept_state(t->ssl);
@@ -32,18 +30,15 @@ void evt_tls_set_role(evt_tls_t *t, evt_endpt_t role)
     }
 }
 
-SSL_CTX *evt_get_SSL_CTX(const evt_ctx_t *ctx)
-{
+SSL_CTX *evt_get_SSL_CTX(const evt_ctx_t *ctx) {
     return ctx->ctx;
 }
 
-SSL *evt_get_ssl(const evt_tls_t *tls)
-{
+SSL *evt_get_ssl(const evt_tls_t *tls) {
     return tls->ssl;
 }
 
-static void tls_begin(void)
-{
+static void tls_begin(void) {
     SSL_library_init();
     SSL_load_error_strings();
     ERR_load_BIO_strings();
@@ -51,8 +46,7 @@ static void tls_begin(void)
     ERR_load_crypto_strings();
 }
 
-evt_tls_t *evt_ctx_get_tls(evt_ctx_t *d_eng)
-{
+evt_tls_t *evt_ctx_get_tls(evt_ctx_t *d_eng) {
     int r = 0;
     evt_tls_t *con = malloc(sizeof(evt_tls_t));
     if ( !con ) {
@@ -91,8 +85,7 @@ evt_tls_t *evt_ctx_get_tls(evt_ctx_t *d_eng)
     return con;
 }
 
-void evt_ctx_set_writer(evt_ctx_t *ctx, net_wrtr my_writer)
-{
+void evt_ctx_set_writer(evt_ctx_t *ctx, net_wrtr my_writer) {
     ctx->writer = my_writer;
     assert( ctx->writer != NULL);
 }
@@ -182,26 +175,22 @@ int evt_ctx_init(evt_ctx_t *tls)
     return 0;
 }
 
-int evt_ctx_init_ex(evt_ctx_t *tls, const char *crtf, const char *key)
-{
+int evt_ctx_init_ex(evt_ctx_t *tls, const char *crtf, const char *key) {
     int r = 0;
     r = evt_ctx_init( tls);
     assert( 0 == r);
     return evt_ctx_set_crt_key(tls, crtf, key);
 }
 
-int evt_ctx_is_crtf_set(evt_ctx_t *t)
-{
+int evt_ctx_is_crtf_set(evt_ctx_t *t) {
     return t->cert_set;
 }
 
-int evt_ctx_is_key_set(evt_ctx_t *t)
-{
+int evt_ctx_is_key_set(evt_ctx_t *t) {
     return t->key_set;
 }
 
-static int evt__send_pending(evt_tls_t *conn, void *buf)
-{
+static int evt__send_pending(evt_tls_t *conn, void *buf) {
     assert( conn != NULL);
     int pending = BIO_pending(conn->app_bio);
     if ( !(pending > 0) )
@@ -215,8 +204,7 @@ static int evt__send_pending(evt_tls_t *conn, void *buf)
     return p;
 }
 
-static int evt__tls__op(evt_tls_t *conn, enum tls_op_type op, void *buf, int sz)
-{
+static int evt__tls__op(evt_tls_t *conn, enum tls_op_type op, void *buf, int sz) {
     int r = 0;
     int bytes = 0;
     char tbuf[16*1024] = {0};
@@ -322,8 +310,7 @@ static int evt__tls__op(evt_tls_t *conn, enum tls_op_type op, void *buf, int sz)
         return r;
 }
 
-int evt_tls_feed_data(evt_tls_t *c, void *data, int sz)
-{
+int evt_tls_feed_data(evt_tls_t *c, void *data, int sz) {
     int rv =  BIO_write(c->app_bio, data, sz);
     assert( rv == sz);
 
@@ -413,7 +400,7 @@ void evt_ctx_free(evt_ctx_t *ctx)
     SSL_CTX_free(ctx->ctx);
     ctx->ctx = NULL;
 
-    ERR_remove_state(0);
+    // ERR_remove_thread_state(NULL);
     ENGINE_cleanup();
     CONF_modules_unload(1);
     ERR_free_strings();
@@ -425,8 +412,7 @@ void evt_ctx_free(evt_ctx_t *ctx)
 
 
 // adapted from Openssl's s23_srvr.c code
-int is_tls_stream(const char *bfr, const ssize_t nrd)
-{
+int is_tls_stream(const char *bfr, const ssize_t nrd) {
     int is_tls = 0;
     assert( nrd >= 11);
     if ((bfr[0] & 0x80) && (bfr[2] == 1)) // SSL2_MT_CLIENT_HELLO

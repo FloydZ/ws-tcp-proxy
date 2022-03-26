@@ -1,11 +1,12 @@
+build/
+cmake-build-debug/
+cmake-build-release/
+
 .DS_Store
 *.swp
 *~.nib
 
 build/
-nbproject/
-
-*.s
 
 *.pbxuser
 *.perspective
@@ -15,5 +16,8 @@ nbproject/
 core
 tags
 *.o
-libuv*
 ws_proxy
+
+.gdb_history
+.idea/
+.local-history/

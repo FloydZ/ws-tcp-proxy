@@ -74,7 +74,7 @@ void ws_init(ws_parser* parser) {
   parser->maskpos = 0;
   parser->bodypos = 0;
   parser->payload16 = 1;
-};
+}
 
 size_t ws_execute(ws_parser* parser, const ws_settings* settings, const char* data, size_t start, size_t end) {
   uint8_t* p = (uint8_t*)data;

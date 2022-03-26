@@ -39,8 +39,7 @@ typedef int (*net_rdr)(evt_tls_t *tls, void *edata, int len);
  * The TLS context, similar to openSSL's SSl_CTX
 */
 
-typedef struct evt_ctx_s
-{
+typedef struct evt_ctx_s{
     //find better place for it , should be one time init
     SSL_CTX *ctx;
 
@@ -61,13 +60,12 @@ typedef struct evt_ctx_s
 
     //function for reading network data and feeding to evt
     net_rdr reader;
-
 } evt_ctx_t;
 
 struct evt_tls_s {
-
     void    *data;
     void    *data2;
+
     //Our BIO, all IO should be through this
     BIO     *app_bio;
     SSL     *ssl;
@@ -92,10 +90,10 @@ struct evt_tls_s {
 
 //supported TLS operation
 enum tls_op_type {
-    EVT_TLS_OP_HANDSHAKE
-   ,EVT_TLS_OP_READ
-   ,EVT_TLS_OP_WRITE
-   ,EVT_TLS_OP_SHUTDOWN
+    EVT_TLS_OP_HANDSHAKE,
+	EVT_TLS_OP_READ,
+	EVT_TLS_OP_WRITE,
+	EVT_TLS_OP_SHUTDOWN
 };
 
 /*configure the tls state machine */
@@ -157,6 +155,7 @@ int evt_tls_write(evt_tls_t *c, void *msg, int str_len, evt_write_cb on_write);
 /*Perform a unwrapping of network received data, equivalent of `SSL_read` and
 `evt_read_cb is called on completion */
 int evt_tls_read(evt_tls_t *c, evt_read_cb on_read );
+
 /* equivalent of SSL_shutwdown, This performs Two-way SSL_dhutdown */
 int evt_tls_close(evt_tls_t *c, evt_close_cb cls);
 
@@ -170,11 +169,11 @@ SSL helper API
 
 //openssl>=1.0.2 has SSL_is_server API to check if the ssl connection is server.
 //Older versions does not have this function. Hence this function is introduced.
-
 enum evt_endpt_t {
-    ENDPT_IS_CLIENT
-   ,ENDPT_IS_SERVER
+    ENDPT_IS_CLIENT,
+	ENDPT_IS_SERVER
 };
+
 typedef enum evt_endpt_t evt_endpt_t;
 
 /*Tells if the tls endpoint is client or server */

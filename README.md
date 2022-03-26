@@ -16,12 +16,18 @@ Running
 -----
 
 The server accepts the following arguments:
-
+```
     ./ws-tcp-proxy --local 0.0.0.0:8080 --remote 127.0.0.1:5000
+```
+
+TODO
+----
+- Readme überarbeiteb
+- Wall flags compiler check
+- Remove makefile
 
 Features
 -----
-
   * supports parsing of all websocket control and data frames from a stream
   * evented io handled by libuv
   * does not support HTTP beyond what is required for performing a websocket
@@ -31,7 +37,7 @@ Features
   * very small overhead per connection (need to measure)
   * handshake performed using joyent http-parser which is very low overhead
     and fast
-  * only supports http://tools.ietf.org/html/rfc6455. is not backwards 
+  * only supports http://tools.ietf.org/html/rfc6455. It Is not backwards 
     compatible
   * proxies websocket to a remote host/port
   * does not do any utf8 decoding for text frames. chunks of frame payloads
@@ -60,5 +66,4 @@ Future
 
 Credits
 -----
-
 This project is inspired/copied from ws-uv (https://github.com/billywhizz/ws-uv.git)

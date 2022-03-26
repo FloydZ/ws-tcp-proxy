@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 #include "evt_tls.h"
-#include "libuv/include/uv.h"
+#include "uv.h"
 
 //copied gladly from libuv
 #define CONTAINER_OF(ptr, type, member)                                       \
