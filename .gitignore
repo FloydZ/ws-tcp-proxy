@@ -21,3 +21,4 @@ ws_proxy
 .gdb_history
 .idea/
 .local-history/
+.cache/
