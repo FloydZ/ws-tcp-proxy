@@ -5,5 +5,5 @@ stdenv.mkDerivation {
   name = "ws-tcp-proxy";
   src = ./.;
 
-  buildInputs = [ git libtool autoconf automake autogen gnumake cmake clang ];
+  buildInputs = [ git libtool autoconf automake autogen gnumake cmake clang openssl ];
 }

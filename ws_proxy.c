@@ -444,7 +444,8 @@ void on_local_connection(uv_stream_t *handle, int status) {
 }
 
 
-int server_start(uv_tcp_t *server) {
+void server_start(void *args) {
+    uv_tcp_t *server = (uv_tcp_t *)args;
     evt_ctx_t ctx;
     uv_loop_t* loop;
     loop = uv_loop_new();
@@ -458,7 +459,7 @@ int server_start(uv_tcp_t *server) {
     e = uv_tcp_init_ex(loop, server, AF_INET);
     if (e < 0) {
         printf("Socket creation error: %s\n",  uv_strerror(e));
-        return 1;
+        return;
     }
 
 
@@ -477,13 +478,13 @@ int server_start(uv_tcp_t *server) {
     e = uv_tcp_bind(server, (const struct sockaddr*)&local_addr, 0);
     if (e < 0) {
         printf("Socket bind error: %s\n", uv_strerror(e));
-        return 1;
+        return;
     }
 
     e = uv_listen((uv_stream_t*)server, BACKLOG, on_local_connection);
     if (e < 0) {
         printf("Socket listen error: %s\n", uv_strerror(e));
-        return 1;
+        return;
     }
 
     DEBUG_PRINT("Proxying Websocket (%s:%u)", inet_ntoa(local_addr.sin_addr), ntohs(local_addr.sin_port));
@@ -491,7 +492,7 @@ int server_start(uv_tcp_t *server) {
     e = uv_run(loop, UV_RUN_DEFAULT);
     uv_loop_delete(loop);
 
-    return 0;
+    return;
 }
 
 
@@ -564,6 +565,8 @@ void sigintHandler(int s){
 
 //TODO https://github.com/haywire/haywire/tree/master/src/haywire
 int main(int argc, char **argv) {
+    if (parse_args(argc, argv) == 0)
+        return 0;
 
     struct sigaction sigIntHandler;
 
@@ -576,21 +579,12 @@ int main(int argc, char **argv) {
     int num_threads = 1;
     uv_tcp_t server[num_threads];
     uv_thread_t threads[num_threads];
-    uv_loop_t *uv_loop;
 
 
+    uv_loop_t *uv_loop = uv_default_loop();
+    uv_thread_t *service_handle = malloc(sizeof(uv_thread_t));
 
-    if (parse_args(argc, argv) == 0)
-        return 0;
-
-    uv_loop = uv_default_loop();
-
-    uv_async_t* service_handle = 0;
-    service_handle = malloc(sizeof(uv_async_t));
-    uv_async_init(uv_loop, service_handle, NULL);
-
-    for (int i = 0; i < num_threads; i++)
-    {
+    for (int i = 0; i < num_threads; i++) {
         int e = uv_thread_create(&threads[i], server_start, &server[i]);
         if (e){
             printf("uv_thread_create error: %u\n", e);

@@ -6,12 +6,12 @@ This is a simple Websocket to TCP proxy, built on libuv.
 Building
 -----
 ```
- 	git clone git@github.com:FloydZ/ws-tcp-proxy
-    cd ws-tcp-proxy
-    mkdir build
-	cd build
-	cmake ..
-	make -j1
+git clone --recursive https://github.com/FloydZ/ws-tcp-proxy
+cd ws-tcp-proxy
+mkdir build
+cd build
+cmake ..
+make -j8
 ```
 
 Running
@@ -19,7 +19,7 @@ Running
 
 The server accepts the following arguments:
 ```
-    ./ws-tcp-proxy --local 0.0.0.0:8080 --remote 127.0.0.1:5000
+./ws-tcp-proxy --local 0.0.0.0:8080 --remote 127.0.0.1:5000
 ```
 
 Features
